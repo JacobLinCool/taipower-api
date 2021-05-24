@@ -8,18 +8,18 @@ async function handle_request(request) {
     const upgrade_header = request.headers.get("Upgrade");
     if (upgrade_header && upgrade_header === "websocket") {
         return handle_websocket(request);
+    } else {
+        const processed_data = await get_data();
+
+        return new Response(JSON.stringify(processed_data, null, 4), {
+            headers: {
+                "Content-Type": "application/json",
+                "Cross-Origin-Resource-Policy": "cross-origin",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+            },
+        });
     }
-
-    const processed_data = await get_data();
-
-    return new Response(JSON.stringify(processed_data, null, 4), {
-        headers: {
-            "Content-Type": "application/json",
-            "Cross-Origin-Resource-Policy": "cross-origin",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Credentials": "true",
-        },
-    });
 }
 
 async function handle_websocket(request) {
@@ -32,36 +32,39 @@ async function handle_websocket(request) {
         msg: "check",
     };
 
-    server.addEventListener("open", async (event) => {
-        console.log("Connection Opened.");
-        let processed_data = await get_data();
-        server.send(JSON.stringify(processed_data));
+    let processed_data = await get_data();
+    server.send(JSON.stringify(processed_data));
 
-        setInterval(() => {
-            server.send(JSON.stringify(check_data));
-        }, 60 * 1000);
+    setInterval(() => {
+        server.send(JSON.stringify(check_data));
+    }, 60 * 1000);
 
-        setInterval(async () => {
-            let new_data = await get_data();
-            if (new_data.time !== processed_data.time) {
-                processed_data = new_data;
-                server.send(JSON.stringify(processed_data));
-            }
-        }, 5 * 60 * 1000);
+    setInterval(async () => {
+        let new_data = await get_data();
+        if (new_data.time !== processed_data.time) {
+            processed_data = new_data;
+            server.send(JSON.stringify(processed_data));
+        }
+    }, 5 * 60 * 1000);
 
-        setInterval(() => {
-            server.send(
-                JSON.stringify({
-                    timestamp: new Date(),
-                    msg: "closed",
-                })
-            );
-        }, 1.5 * 60 * 60 * 1000);
-    });
+    setInterval(() => {
+        server.send(
+            JSON.stringify({
+                timestamp: new Date(),
+                msg: "closed",
+            })
+        );
+    }, 1.5 * 60 * 60 * 1000);
+
     server.addEventListener("message", async (event) => {
         const data = event.data;
     });
     server.addEventListener("close", async (event) => {
         console.log("Connection Closed.");
+    });
+
+    return new Response(null, {
+        status: 101,
+        webSocket: client,
     });
 }
