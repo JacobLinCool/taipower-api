@@ -5,7 +5,8 @@ addEventListener("fetch", (event) => {
 });
 
 async function handle_request(request) {
-    if (request.url.includes("/ws")) {
+    const upgrade_header = request.headers.get("Upgrade");
+    if (upgrade_header && upgrade_header === "websocket") {
         return handle_websocket(request);
     }
 
@@ -22,11 +23,6 @@ async function handle_request(request) {
 }
 
 async function handle_websocket(request) {
-    const upgrade_header = request.headers.get("Upgrade");
-    if (!upgrade_header || upgrade_header !== "websocket") {
-        return new Response("Expected Upgrade: websocket", { status: 426 });
-    }
-
     const ws_pair = new WebSocketPair();
     const [client, server] = Object.values(ws_pair);
     server.accept();
