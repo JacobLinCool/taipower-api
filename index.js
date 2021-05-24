@@ -24,7 +24,7 @@ async function handle_request(request) {
             max: parseFloat(raw[2]) || 0,
             now: parseFloat(raw[3]) || 0,
             percentage: parseInt((parseFloat(raw[3]) / parseFloat(raw[2])) * 1000) / 10,
-            description: raw[5],
+            description: raw[5].trim(),
         };
 
         try {
