@@ -9,6 +9,8 @@ async function handle_request(request) {
         time: plants_raw_data[""],
         usage: {
             current: parseFloat(usage_raw_data.records[0].curr_load * 10),
+            capacity: parseFloat(usage_raw_data.records[1].fore_maxi_sply_capacity * 10),
+            percentage: parseFloat(usage_raw_data.records[0].curr_util_rate),
         },
         statistics: {
             total: 0,
@@ -42,8 +44,6 @@ async function handle_request(request) {
         processed_data.statistics[k] = parseInt(v * 100) / 100;
     }
     processed_data.statistics.total = parseInt(Object.values(processed_data.statistics).reduce((a, b) => a + b) * 100) / 100;
-
-    processed_data.usage.percentage = parseInt((processed_data.usage.current / processed_data.statistics.total) * 100);
 
     return new Response(JSON.stringify(processed_data, null, 4), {
         headers: {
