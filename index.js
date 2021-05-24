@@ -1,49 +1,15 @@
+import { get_data } from "./src/api.js";
+
 addEventListener("fetch", (event) => {
     event.respondWith(handle_request(event.request));
 });
 
 async function handle_request(request) {
-    let plants_raw_data = await fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genary.json`).then((r) => r.json());
-    let usage_raw_data = await fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/loadpara.json`).then((r) => r.json());
-    let processed_data = {
-        time: plants_raw_data[""],
-        usage: {
-            current: parseFloat(usage_raw_data.records[0].curr_load * 10),
-            capacity: parseFloat(usage_raw_data.records[1].fore_maxi_sply_capacity * 10),
-            percentage: parseFloat(usage_raw_data.records[0].curr_util_rate),
-        },
-        statistics: {
-            total: 0,
-        },
-        plants: {},
-    };
-
-    plants_raw_data["aaData"].forEach((raw) => {
-        if (raw[1] == "小計") return;
-        let plant = {
-            type: "",
-            name: raw[1].replaceAll(/\(註\d{1,2}\)/g, "").replaceAll(/&amp;/g, "&"),
-            max: parseFloat(raw[2]) || 0,
-            now: parseFloat(raw[3]) || 0,
-            percentage: parseInt((parseFloat(raw[3]) / parseFloat(raw[2])) * 1000) / 10,
-            description: raw[5].trim(),
-        };
-
-        try {
-            plant.type = Array.from(raw[0].matchAll(/<b>([^]+?)<\/b>/g))[0][1];
-        } catch (e) {}
-
-        if (!processed_data.plants[plant.type]) processed_data.plants[plant.type] = [];
-        if (!processed_data.statistics[plant.type]) processed_data.statistics[plant.type] = 0;
-
-        processed_data.plants[plant.type].push(plant);
-        processed_data.statistics[plant.type] += plant.now;
-    });
-
-    for (let [k, v] of Object.entries(processed_data.statistics)) {
-        processed_data.statistics[k] = parseInt(v * 100) / 100;
+    if (request.url.includes("/ws")) {
+        return handle_websocket(request);
     }
-    processed_data.statistics.total = parseInt(Object.values(processed_data.statistics).reduce((a, b) => a + b) * 100) / 100;
+
+    const processed_data = await get_data();
 
     return new Response(JSON.stringify(processed_data, null, 4), {
         headers: {
@@ -52,5 +18,54 @@ async function handle_request(request) {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Credentials": "true",
         },
+    });
+}
+
+async function handle_websocket(request) {
+    const upgrade_header = request.headers.get("Upgrade");
+    if (!upgrade_header || upgrade_header !== "websocket") {
+        return new Response("Expected Upgrade: websocket", { status: 426 });
+    }
+
+    const ws_pair = new WebSocketPair();
+    const [client, server] = Object.values(ws_pair);
+    server.accept();
+
+    const check_data = {
+        timestamp: new Date(),
+        msg: "check",
+    };
+
+    server.addEventListener("open", async (event) => {
+        console.log("Connection Opened.");
+        let processed_data = await get_data();
+        server.send(JSON.stringify(processed_data));
+
+        setInterval(() => {
+            server.send(JSON.stringify(check_data));
+        }, 60 * 1000);
+
+        setInterval(async () => {
+            let new_data = await get_data();
+            if (new_data.time !== processed_data.time) {
+                processed_data = new_data;
+                server.send(JSON.stringify(processed_data));
+            }
+        }, 5 * 60 * 1000);
+
+        setInterval(() => {
+            server.send(
+                JSON.stringify({
+                    timestamp: new Date(),
+                    msg: "closed",
+                })
+            );
+        }, 1.5 * 60 * 60 * 1000);
+    });
+    server.addEventListener("message", async (event) => {
+        const data = event.data;
+    });
+    server.addEventListener("close", async (event) => {
+        console.log("Connection Closed.");
     });
 }
