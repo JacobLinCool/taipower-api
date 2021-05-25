@@ -1,8 +1,13 @@
 import { get_data } from "./src/api.js";
+import { handle_cron } from "./src/cron.js";
 import { handle_websocket } from "./src/websocket.js";
 
 addEventListener("fetch", (event) => {
     event.respondWith(handle_request(event.request));
+});
+
+addEventListener("scheduled", (event) => {
+    event.waitUntil(handle_cron(event));
 });
 
 async function handle_request(request) {

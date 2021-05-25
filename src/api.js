@@ -68,4 +68,4 @@ async function get_data() {
     return processed_data;
 }
 
-export { get_data };
+export { get_data, get_data_from_taipower_api, process_taipower_api_data };
