@@ -9,7 +9,7 @@ async function Fetch(url, options = {}) {
         response = await fetch(request);
         response = new Response(response.body, response);
         response.headers.append("Cache-Control", "s-maxage=30");
-        await cache.put(cache_key, response.clone());
+        cache.put(cache_key, response.clone());
     }
     return response;
 }
