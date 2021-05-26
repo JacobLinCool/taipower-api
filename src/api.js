@@ -1,7 +1,9 @@
+import { Fetch } from "./cache.js";
+
 async function get_data_from_taipower_api() {
     let api_requests = [
-        fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/loadpara.json`).then((raw) => raw.json()),
-        fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genary.json`).then((raw) => raw.json()),
+        Fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/loadpara.json`).then((raw) => raw.json()),
+        Fetch(`https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genary.json`).then((raw) => raw.json()),
     ];
     let [usage_data, plant_data] = await Promise.all(api_requests);
 
@@ -28,7 +30,7 @@ function process_taipower_api_data({ usage_data, plant_data }) {
 
     // Parse Plant Data
     plant_data["aaData"].forEach((raw) => {
-        if (raw[1] == "小計") return;
+        if (raw[1].includes("小計")) return;
         let plant = {
             type: "",
             name: raw[1].replaceAll(/\(註\d{1,2}\)/g, "").replaceAll(/&amp;/g, "&"),
