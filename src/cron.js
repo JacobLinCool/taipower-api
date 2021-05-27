@@ -7,21 +7,19 @@ async function handle_cron(event) {
     const cache_key = new Request(url, request);
     const cache = caches.default;
 
-    let response = await cache.match(cache_key);
-    if (!response) {
-        const processed_data = await get_data();
+    const processed_data = await get_data();
 
-        response = new Response(JSON.stringify(processed_data, null, 4), {
-            headers: {
-                "Content-Type": "application/json",
-                "Cross-Origin-Resource-Policy": "cross-origin",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Credentials": "true",
-            },
-        });
-        response.headers.append("Cache-Control", "max-age=45, s-maxage=45");
-        await cache.put(cache_key, response.clone());
-    }
+    response = new Response(JSON.stringify(processed_data), {
+        headers: {
+            "Content-Type": "application/json",
+            "Cross-Origin-Resource-Policy": "cross-origin",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Cache-Control": "max-age=60, s-maxage=60",
+            "X-Direct": "false",
+        },
+    });
+    await cache.put(cache_key, response.clone());
 }
 
 export { handle_cron };

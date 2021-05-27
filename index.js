@@ -1,5 +1,6 @@
 import { get_data } from "./src/api.js";
 import { handle_cron } from "./src/cron.js";
+import { handle_websocket } from "./src/websocket.js";
 
 addEventListener("fetch", (event) => {
     event.respondWith(handle_request(event));
@@ -10,6 +11,11 @@ addEventListener("scheduled", (event) => {
 });
 
 async function handle_request(event) {
+    const upgrade_header = event.request.headers.get("Upgrade");
+    if (upgrade_header == "websocket") {
+        return await handle_websocket();
+    }
+
     const url = "https://taipower-api.jacob.workers.dev/";
     const request = new Request(url);
 
@@ -20,15 +26,16 @@ async function handle_request(event) {
     if (!response) {
         const processed_data = await get_data();
 
-        response = new Response(JSON.stringify(processed_data, null, 4), {
+        response = new Response(JSON.stringify(processed_data), {
             headers: {
                 "Content-Type": "application/json",
                 "Cross-Origin-Resource-Policy": "cross-origin",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Credentials": "true",
+                "Cache-Control": "max-age=60, s-maxage=60",
+                "X-Direct": "true",
             },
         });
-        response.headers.append("Cache-Control", "max-age=45, s-maxage=45");
         event.waitUntil(cache.put(cache_key, response.clone()));
     }
     return response;

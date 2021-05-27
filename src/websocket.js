@@ -1,50 +1,37 @@
-import { get_data } from "./api.js";
-
-async function handle_websocket(request) {
+async function handle_websocket() {
     const ws_pair = new WebSocketPair();
     const [client, server] = Object.values(ws_pair);
     server.accept();
 
-    const check_data = {
-        timestamp: new Date(),
-        msg: "check",
-    };
-
-    let processed_data = await get_data();
-    server.send(JSON.stringify(processed_data));
-
-    setInterval(() => {
-        server.send(JSON.stringify(check_data));
-    }, 60 * 1000);
-
-    setInterval(async () => {
-        let new_data = await get_data();
-        if (new_data.time !== processed_data.time) {
-            processed_data = new_data;
-            server.send(JSON.stringify(processed_data));
-        }
-    }, 5 * 60 * 1000);
-
-    setInterval(() => {
-        server.send(
-            JSON.stringify({
-                timestamp: new Date(),
-                msg: "closed",
-            })
-        );
-    }, 1.5 * 60 * 60 * 1000);
-
     server.addEventListener("message", async (event) => {
-        const data = event.data;
+        server.send("!");
     });
-    server.addEventListener("close", async (event) => {
-        console.log("Connection Closed.");
-    });
+
+    send_data(server);
+
+    setInterval(send_data(server), 60 * 1000);
 
     return new Response(null, {
         status: 101,
         webSocket: client,
     });
+}
+
+async function send_data(server) {
+    let data = await get_cached();
+    server.send(data);
+}
+
+async function get_cached() {
+    const url = "https://taipower-api.jacob.workers.dev/";
+    const request = new Request(url);
+
+    const cache_key = new Request(url, request);
+    const cache = caches.default;
+
+    const response = await cache.match(cache_key);
+
+    return response.text();
 }
 
 export { handle_websocket };
