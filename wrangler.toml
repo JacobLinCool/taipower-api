@@ -5,6 +5,9 @@ workers_dev = true
 route = ""
 zone_id = ""
 webpack_config = "webpack.config.js"
+kv_namespaces = [
+  { binding = "CACHE", id = "8df65b4a83db4445b727ef1993e92cfa", preview_id = "8df65b4a83db4445b727ef1993e92cfa" }
+]
 
 [triggers]
-crons = ["*/1 * * * *"]
+crons = ["*/5 * * * *", "1/5 * * * *"]
