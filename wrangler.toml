@@ -1,13 +1,23 @@
 name = "taipower-api"
-type = "webpack"
+type = "javascript"
 account_id = "b1c3d1b89f9131a84a0f1f6a973232f1"
 workers_dev = true
-route = ""
-zone_id = ""
-webpack_config = "webpack.config.js"
+compatibility_date = "2022-03-03"
 kv_namespaces = [
   { binding = "CACHE", id = "8df65b4a83db4445b727ef1993e92cfa", preview_id = "8df65b4a83db4445b727ef1993e92cfa" }
 ]
 
 [triggers]
-crons = ["*/5 * * * *", "1/5 * * * *"]
+crons = ["*/5 * * * *"]
+
+[build.upload]
+format = "modules"
+dir = "./dist"
+main = "./index.js"
+
+[[build.upload.rules]]
+type = "ESModule"
+globs = ["**/*.js"]
+
+[build]
+command = "npm run -s build"

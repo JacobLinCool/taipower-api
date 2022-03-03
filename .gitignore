@@ -76,4 +76,5 @@ typings/
 .fusebox/
 
 worker/
+dist/
 .DS_Store
