@@ -28,12 +28,5 @@ jobs:
             - name: Run ESLint
               run: pnpm lint
 
-            - name: Run Jest
-              uses: ArtiomTr/jest-coverage-report-action@v2.0.3
-              with:
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
-                  package-manager: pnpm
-                  skip-step: install
-
             - name: Build
               run: pnpm run build
