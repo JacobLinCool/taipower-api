@@ -30,14 +30,14 @@ function process_taipower_api_data({ usage_data, plant_data }) {
 
     // Parse Plant Data
     plant_data["aaData"].forEach((raw) => {
-        if (raw[1].includes("小計")) return;
+        if (raw[2].includes("小計")) return;
         let plant = {
             type: "",
-            name: raw[1].replaceAll(/\(註\d{1,2}\)/g, "").replaceAll(/&amp;/g, "&"),
-            max: parseFloat(raw[2]) || 0,
-            now: parseFloat(raw[3]) || 0,
-            percentage: parseInt((parseFloat(raw[3]) / parseFloat(raw[2])) * 1000) / 10,
-            description: raw[5].trim(),
+            name: raw[2].replaceAll(/\(註\d{1,2}\)/g, "").replaceAll(/&amp;/g, "&"),
+            max: parseFloat(raw[3]) || 0,
+            now: parseFloat(raw[4]) || 0,
+            percentage: parseInt((parseFloat(raw[4]) / parseFloat(raw[3])) * 1000) / 10,
+            description: raw[6].trim(),
         };
 
         try {
@@ -64,8 +64,10 @@ function process_taipower_api_data({ usage_data, plant_data }) {
 
 async function get_data() {
     const { usage_data, plant_data } = await get_data_from_taipower_api();
+    console.log({ usage_data, plant_data });
 
     const processed_data = process_taipower_api_data({ usage_data, plant_data });
+    console.log(processed_data);
 
     return processed_data;
 }
